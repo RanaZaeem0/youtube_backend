@@ -1,7 +1,7 @@
 import  { v2 as cloudinary } from "cloudinary"
 import { log } from "console";
 import fs from 'fs'
-import { TokenExpiredError } from "jsonwebtoken";
+import JWT from "jsonwebtoken";
 import { loadEnvFile } from "process";
 
 
@@ -22,7 +22,7 @@ const uploadOnCloudinary = async(fileLocalPath)=>{
   })
  
   console.log(`file uploaded on cloudinary ${response}`);
- return response.url
+ return response
 
   } catch (error) {
     fs.unlinkSync(fileLocalPath)
