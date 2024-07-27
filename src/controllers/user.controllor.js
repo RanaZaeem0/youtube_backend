@@ -1,6 +1,6 @@
 import { asyncHandler } from "../utils/asyncHandler.js"
 import zod from "zod"
-import ApiError from '../utils/ApiError.js'
+import { ApiError } from '../utils/ApiError.js'
 import { User } from "../modules/user.module.js"
 import { upload } from "../middleware/multer.middleware.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
@@ -13,10 +13,34 @@ const UserDataCheck = zod.object({
     , password: zod.string().min(2)
 
 })
+const loginDataCheck = zod.object({
+    email: zod.string().email()
+    , password: zod.string().min(2)
+
+})
+
+const generateAccessAndRefreshToken = async (userId) => {
+    try {
+
+        const accessToken = user.generateAccessToken()
+        const refreshToken = user.generateRefreshToken()
+
+        user.refreshToken = refreshToken
+        await user.save({ validateBeforeSave: false })
+        return {
+            accessToken,
+            refreshToken
+        }
+    } catch (error) {
+        throw new ApiError('500', "Somthing went wrong during cretion of acess token and refreshtoken")
+    }
 
 
+
+}
 const registerUser = asyncHandler(async (req, res) => {
     //   take data from frontend
+    console.log("user reach hrer");
     const { username, fullName, password, email } = req.body
 
     const validate = UserDataCheck.safeParse({
@@ -38,39 +62,90 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new ApiError(401, "User Name or email is Alredy Exicted")
     }
 
-              const avatarLocalPath = req.files?.avatar[0]?.path
-              const coverLocalPath = req.files?.coverImage[0]?.path
- 
-    if(!avatarLocalPath){
-        throw new  ApiError(402, "Avatar image local path dont avalible does not execit")
-    }
-  const avatar = uploadOnCloudinary(avatarLocalPath)
-  const coverImage = uploadOnCloudinary(coverLocalPath)
 
-   const user = await  User.create({
-        fullName,
+    const avatarLocalPath = req.files?.avatar[0]?.path
+    const coverLocalPath = req.files?.coverImage[0]?.path
+
+    if (!avatarLocalPath) {
+        throw new ApiError(402, "Avatar image local path dont avalible does not execit")
+    }
+    const avatar = await uploadOnCloudinary(avatarLocalPath)
+    const coverImage = await uploadOnCloudinary(coverLocalPath)
+    console.log(avatar, "avatar ho ma");
+
+
+    const user = await User.create({
+        fullName: fullName,
         username,
         email,
         password,
-        coverImage:coverImage?.url || "",
-        avatar:avatar.url
+        coverImage: coverImage?.url || "",
+        avatar: avatar.url
     })
 
-  const createdUser  = await User.findOne(user._id).select(
-    "-password -refreshToken"
-  )
+    const createdUser = await User.findOne(user._id).select(
+        "-password -refreshToken"
+    )
 
-  if(!createdUser){
-    throw new ApiError(403,"User is not created in database")
-  }
+    if (!createdUser) {
+        throw new ApiError(403, "User is not created in database")
+    }
 
-  return res.status(201).json(
-    new ApiResponse(200,createdUser,"User is created successfully"))
-
-
- 
+    return res.status(201).json(
+        new ApiResponse(200, createdUser, "User is created successfully"))
 
 
+
+
+
+})
+
+const loginUser = asyncHandler(async (req, res) => {
+
+    // get email,password
+    const { email, password, username } = req.body
+    const validateLogin = loginDataCheck.safeParse({ email, password, username })
+    if (!validateLogin.success) {
+        throw new ApiError(402, "user Input is not correct")
+    }
+    // check the user is exict
+    // const CheakPassord  =  User.methods.isPasswordCorrect(password)
+    const user = User.findOne({
+        '$or': [{ email }, { username }]
+    })
+
+    if (!user) {
+        throw new ApiError(404, "Email  is incorrect")
+    }
+
+    const passwordIsValide = await user.isPasswordCorrect(password)
+
+    if (!passwordIsValide) {
+        throw new ApiError(400, "passwrid is not valide")
+    }
+
+    const { refreshToken, accessToken } = generateAccessAndRefreshToken(user._id)
+    const loginUser = await User.findById(user._id).select("-password - refreshToken")
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+    
+
+    return res.status(200)
+    .cookie('accessToken',accessToken,options)
+    .cookie('refreshToken',refreshToken,options).json(
+        new ApiResponse(200,{
+            user:loginUser,accessToken,refreshToken
+        },
+        "User logined in successFully "
+    )
+    )
+
+})
+
+const logoutUser = asyncHandler(async (req,res)=>{
+    
 })
 
 export { registerUser }

@@ -3,8 +3,12 @@ import { log } from "console";
 import fs from 'fs'
 import JWT from "jsonwebtoken";
 import { loadEnvFile } from "process";
+import dotenv from "dotenv"
+import path from "path";
 
-
+dotenv.config({
+  path:'../../env'
+})
 
 cloudinary.config({ 
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
@@ -15,14 +19,28 @@ cloudinary.config({
 
 const uploadOnCloudinary = async(fileLocalPath)=>{
   try {
+    console.log("local path",typeof fileLocalPath);
   if(!fileLocalPath) return console.log('filelocalpath error');
   
   const response = await cloudinary.uploader.upload(fileLocalPath,{
     resource_type:"auto"
   })
  
-  console.log(`file uploaded on cloudinary ${response}`);
- return response
+  console.log(`file uploaded on cloudinary ${response.url}`);
+
+  const deleteFileSync = (filelocalpath) => {
+    try {
+      fs.unlinkSync(filelocalpath);
+      console.log(`File deleted successfully: ${filelocalpath}`);
+    } catch (err) {
+      console.error(`Error deleting file: ${err.message}`);
+    }
+  };
+  deleteFileSync(fileLocalPath)
+   console.log('file  unlink');
+        return response;
+
+
 
   } catch (error) {
     fs.unlinkSync(fileLocalPath)

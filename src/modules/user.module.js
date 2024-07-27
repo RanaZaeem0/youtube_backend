@@ -30,7 +30,7 @@ const UserSchema = new Schema({
         type:String,//cloudinary
         require:true,
     },
-    FullName:{
+    fullName:{
         type:String,
         require:true,
         trim:true,
@@ -65,7 +65,7 @@ UserSchema.methods.generateAccessToken  = function(){
         _id:this._id,
         email:this.email,
         username:this.username,
-        fullName:this.FullName
+        fullName:this.fullName
 
     },
     process.env.ACCESS_TOKEN_SECRET,

@@ -6,18 +6,21 @@ import { upload } from "../middleware/multer.middleware.js"
 
 const userRoute = express.Router()
 
-userRoute.post('/register', upload.fields[
+userRoute.post('/register',
+   upload.fields([
     {
-        name: 'avatar'
-        , maxCount: 1
+        name:"avatar",
+        maxCount:1
     },
     {
-        name: "coverImage",
-        maxCount: 1
-    }
-], registerUser)
+        name:'coverImage'
+        ,maxCount:1
 
-userRoute.route.get('/', (req, res) => {
+    }
+   ])
+    , registerUser)
+
+userRoute.get('/register', (req, res) => {
     res.json({
         msg: "dadasd sd sa"
     })
