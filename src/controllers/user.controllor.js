@@ -21,10 +21,11 @@ const loginDataCheck = zod.object({
 
 const generateAccessAndRefreshToken = async (userId) => {
     try {
-
-        const accessToken = user.generateAccessToken()
+        const user = await User.findById(userId)
+        const accessToken =   user.generateAccessToken()
+        
         const refreshToken = user.generateRefreshToken()
-
+    
         user.refreshToken = refreshToken
         await user.save({ validateBeforeSave: false })
         return {
@@ -32,7 +33,7 @@ const generateAccessAndRefreshToken = async (userId) => {
             refreshToken
         }
     } catch (error) {
-        throw new ApiError('500', "Somthing went wrong during cretion of acess token and refreshtoken")
+        throw new ApiError(500, "Somthing went wrong during cretion of acess token and refreshtoken")
     }
 
 
@@ -109,43 +110,50 @@ const loginUser = asyncHandler(async (req, res) => {
         throw new ApiError(402, "user Input is not correct")
     }
     // check the user is exict
-    // const CheakPassord  =  User.methods.isPasswordCorrect(password)
-    const user = User.findOne({
+    const user = await User.findOne({
         '$or': [{ email }, { username }]
     })
 
     if (!user) {
-        throw new ApiError(404, "Email  is incorrect")
+        throw new ApiError(404, "Email or userName  is incorrect")
     }
-
+    
     const passwordIsValide = await user.isPasswordCorrect(password)
 
     if (!passwordIsValide) {
         throw new ApiError(400, "passwrid is not valide")
     }
 
-    const { refreshToken, accessToken } = generateAccessAndRefreshToken(user._id)
-    const loginUser = await User.findById(user._id).select("-password - refreshToken")
+    const { refreshToken, accessToken } = await generateAccessAndRefreshToken(user._id)
+    console.log(accessToken,refreshToken);
+    console.log("after");
+    const loginUser = await User.findById(user._id).select("-password -refreshToken")
+    // const loginUser = await User.findById(user._id).select('-password -refreshToken');
+
+
+    if (!loginUser) {
+   throw new ApiError(404,"login User is not there")
+    }
     const options = {
         httpOnly: true,
         secure: true
     }
-    
+
 
     return res.status(200)
-    .cookie('accessToken',accessToken,options)
-    .cookie('refreshToken',refreshToken,options).json(
-        new ApiResponse(200,{
-            user:loginUser,accessToken,refreshToken
-        },
-        "User logined in successFully "
-    )
-    )
+        .cookie('accessToken', accessToken, options)
+        .cookie('refreshToken', refreshToken, options).json(
+            new ApiResponse(200, {
+                user: loginUser, accessToken, refreshToken
+            },
+                "User logined in successFully "
+            )
+        )
 
 })
 
-const logoutUser = asyncHandler(async (req,res)=>{
-    
+const logoutUser = asyncHandler(async (req, res) => {
+
 })
 
-export { registerUser }
+export { registerUser, loginUser }

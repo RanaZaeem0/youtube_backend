@@ -1,6 +1,6 @@
 import express from "express"
 import { asyncHandler } from "../utils/asyncHandler.js"
-import { registerUser } from "../controllers/user.controllor.js"
+import { loginUser, registerUser } from "../controllers/user.controllor.js"
 import { upload } from "../middleware/multer.middleware.js"
 
 
@@ -19,6 +19,8 @@ userRoute.post('/register',
     }
    ])
     , registerUser)
+
+userRoute.post('/login',loginUser)    
 
 userRoute.get('/register', (req, res) => {
     res.json({

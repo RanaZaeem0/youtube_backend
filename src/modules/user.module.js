@@ -1,6 +1,11 @@
 import mongoose, { model, Schema } from "mongoose"
-import JWT from "jsonwebtoken"
+import jwt from "jsonwebtoken"
 import bcrypt  from "bcrypt"
+import dotenv from "dotenv"
+
+dotenv.config({
+    path:"../../env"
+})
 
 const UserSchema = new Schema({
     username: {
@@ -58,24 +63,31 @@ UserSchema.pre('save',async function (next){
 } )
 
 UserSchema.methods.isPasswordCorrect = async function(password){
+    const ss = await bcrypt.compare(password,this.password)
+console.log(ss,'pass id correct');
     return await bcrypt.compare(password,this.password)
 }
-UserSchema.methods.generateAccessToken  = function(){
-    JWT.sign({
-        _id:this._id,
-        email:this.email,
-        username:this.username,
-        fullName:this.fullName
+UserSchema.methods.generateAccessToken =  function(){
+    return jwt.sign(
+        {
+            _id: this._id,
+            email: this.email,
+            username: this.username,
+            fullName: this.fullName
+        },
+        process.env.ACCESS_TOKEN_SECRET,
+        {
+            expiresIn: process.env.ACCESS_TOKEN_EXPIRY
+        }
+    )
+    
 
-    },
-    process.env.ACCESS_TOKEN_SECRET,
-    {
-        expiresIn:process.env.ACCESS_TOKEN_EXPIRY
-    }
-)
+
+
+  
 }
 UserSchema.methods.generateRefreshToken  = function(){
-    JWT.sign({
+  return  jwt.sign({
         _id:this._id,
     },
     process.env.ACCESS_TOKEN_SECRET,
