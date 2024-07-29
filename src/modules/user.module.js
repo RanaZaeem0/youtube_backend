@@ -54,6 +54,8 @@ const UserSchema = new Schema({
     refreshToken:{
         type:String
     }
+},{
+    timestamps:true
 })
 
 UserSchema.pre('save',async function (next){
