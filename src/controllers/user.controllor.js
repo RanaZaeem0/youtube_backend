@@ -7,6 +7,7 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
+import mongoose from "mongoose";
 const UserDataCheck = zod.object({
     username: zod.string().min(2),
     email: zod.string().email(),
@@ -300,85 +301,191 @@ const updateAccountDetails = asyncHandler(async function (req, res) {
 });
 
 const updateUserAvatar = asyncHandler(async function (req, res) {
-
-    const { newAvatarLocalPath } = req.files?.avatar?.path
+    const { newAvatarLocalPath } = req.files?.avatar?.path;
 
     if (!newAvatarLocalPath) {
-        throw new ApiError(201, "new avatar local path is not define")
+        throw new ApiError(201, "new avatar local path is not define");
     }
 
-    const uploadNewAvatar = await uploadOnCloudinary(newAvatarLocalPath)
+    const uploadNewAvatar = await uploadOnCloudinary(newAvatarLocalPath);
 
     if (!uploadNewAvatar) {
-        throw new ApiError(402, "error Avatar is not on cloud")
+        throw new ApiError(402, "error Avatar is not on cloud");
     }
 
     const user = await User.findByIdAndUpdate(
         req.User._id,
         {
-            "$set": {
-                avatar: uploadNewAvatar.url
-            }
+            $set: {
+                avatar: uploadNewAvatar.url,
+            },
+        },
+        {
+            new: true,
         }
-        , {
-            new: true
-        }
-    ).select('-password')
+    ).select("-password");
 
     if (!user) {
-        throw new ApiError(402, "something withWorng when update the avatar")
+        throw new ApiError(402, "something withWorng when update the avatar");
     }
-    return res.status(201)
-    .json(
-        new ApiResponse(200,
-            user,"avatar image update sccucessfully"
-        )
-    )
-
-
-
-})
+    return res
+        .status(201)
+        .json(new ApiResponse(200, user, "avatar image update sccucessfully"));
+});
 const updateUserCoverImage = asyncHandler(async function (req, res) {
-
-    const { newCoverImageLocalPath } = req.files?.coverImage?.path
+    const { newCoverImageLocalPath } = req.files?.coverImage?.path;
 
     if (!newCoverImageLocalPath) {
-        throw new ApiError(201, "new coverImage local path is not define")
+        throw new ApiError(201, "new coverImage local path is not define");
     }
 
-    const uploadNewcoverImage = await uploadOnCloudinary(newCoverImageLocalPath)
+    const uploadNewcoverImage = await uploadOnCloudinary(newCoverImageLocalPath);
 
     if (!uploadNewcoverImage) {
-        throw new ApiError(402, "error coverImage is not on cloud")
+        throw new ApiError(402, "error coverImage is not on cloud");
     }
 
     const user = await User.findByIdAndUpdate(
         req.User._id,
         {
-            "$set": {
-                coverImage:uploadNewcoverImage.url
-            }
+            $set: {
+                coverImage: uploadNewcoverImage.url,
+            },
+        },
+        {
+            new: true,
         }
-        , {
-            new: true
-        }
-    ).select('-password')
+    ).select("-password");
 
     if (!user) {
-        throw new ApiError(402, "something withWorng when update the cover image")
+        throw new ApiError(402, "something withWorng when update the cover image");
     }
 
-    return res.status(201)
-    .json(
-        new ApiResponse(200,
-            user,"Cover Image update sccucessfully"
-        )
-    )
+    return res
+        .status(201)
+        .json(new ApiResponse(200, user, "Cover Image update sccucessfully"));
+});
 
-})
+const getUserChannalProfile = asyncHandler(async (req, res) => {
+    const { username } = req.params();
+
+    if (!username?.trim()) {
+        ApiError(402, "cannot get  username ");
+    }
+
+    const channal = await User.aggregate([
+        {
+            $match: {
+                username: username?.toLowerCase(),
+            },
+        },
+        {
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "channal",
+                as: "subscribers",
+            },
+        },
+        {
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "subscriber",
+                as: "subscribeTo",
+            },
+        },
+        {
+            $addFields: {
+                subscribersCount: {
+                    $size: "$subscribers",
+                },
+                channalsSubscribedToCount: {
+                    $size: "$subscribeTo",
+                },
+                isSubscribed: {
+                    $cond: {
+                        $if: { $in: [req?.user?._id, "$subscribers.subscriber"] },
+                        then: true,
+                        else: false,
+                    },
+                },
+            },
+        },
+        {
+            $project: {
+                fullName: 1,
+                username: 1,
+                subscribersCount: 1,
+                channelsSubscribedToCount: 1,
+                isSubscribed: 1,
+                avatar: 1,
+                coverImage: 1,
+                email: 1,
+            },
+        },
+    ]);
+
+    if (channal?.length) {
+        throw new ApiError(440, "Channal does not excited");
+    }
+    res
+        .status(201)
+        .json(new ApiResponse(200, channal[0], "Channl data get sccuessfully"));
+});
+
+const getWatchHistry = asyncHandler(async (req, res) => {
+    const user = User.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(req.user._id),
+            },
+        },
+        {
+            $lookup: {
+                from: "videos",
+                localField: "watchHistory",
+                foreignField: "_id",
+                as: "watchHistory",
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "owner",
+                            foreignField: "_id",
+                            as: "owner",
+                            pipeline: [
+                                {
+                                    $project: {
+                                        username: 1,
+                                        avatar: 1,
+                                        email: 1,
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                    {
+                        $addFields: {
+                            owner: {
+                                $first: "$owner"
+                            }
+
+                        }
+                    }
+                ],
+            },
+        },
+
+    ]);
 
 
+   return res.status(201)
+   .json(
+    new ApiResponse(200,user[0].watchHistory,"user watch histroy data get sccuess fully")
+   )
 
+});
 
 export {
     registerUser,
@@ -387,7 +494,9 @@ export {
     refreshAccessToken,
     changeCurrentPassword,
     getCurrentUser,
+    getUserChannalProfile,
     updateAccountDetails,
     updateUserAvatar,
-    updateUserCoverImage
+    updateUserCoverImage,
+    getWatchHistry
 };

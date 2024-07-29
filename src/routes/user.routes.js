@@ -1,6 +1,6 @@
 import express from "express"
 import { asyncHandler } from "../utils/asyncHandler.js"
-import { loginUser, logoutUser, registerUser } from "../controllers/user.controllor.js"
+import { changeCurrentPassword, getCurrentUser, getUserChannalProfile, getWatchHistry, loginUser, logoutUser, registerUser, updateAccountDetails, updateUserAvatar, updateUserCoverImage } from "../controllers/user.controllor.js"
 import { upload } from "../middleware/multer.middleware.js"
 import { verfiyJwt } from "../middleware/auth.middleware.js"
 
@@ -24,10 +24,23 @@ userRoute.post('/register',
 userRoute.post('/login',loginUser)    
 userRoute.post('/logout',verfiyJwt,logoutUser)    
 userRoute.post('/refresh-token',refreshAccessToken)    
+userRoute.post('/change-password',verfiyJwt,changeCurrentPassword)
+userRoute.get('/current-user',verfiyJwt,getCurrentUser)
 
-userRoute.get('/register', (req, res) => {
+userRoute.patch('/update-account',updateAccountDetails)
+userRoute.patch('/changeAvatar' ,verfiyJwt,upload.single('avatar'), updateUserAvatar)
+userRoute.patch('/changeCoverImage',verfiyJwt,upload.single('coverImage'),updateUserCoverImage)
+
+userRoute.get('channal/:username',verfiyJwt,getUserChannalProfile)
+userRoute.get('watchHistory',verfiyJwt,getWatchHistry)
+
+
+
+
+
+userRoute.get('/', (req, res) => {
     res.json({
-        msg: "dadasd sd sa"
+        msg: "fine !"
     })
 })
 
