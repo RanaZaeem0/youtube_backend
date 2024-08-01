@@ -153,8 +153,7 @@ res.status(201)
 
 export {
     getAllComments,
-    updateComment
-    ,
+    updateComment,
     createcomment,
     deleteComment
 }
