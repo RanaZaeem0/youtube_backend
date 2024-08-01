@@ -1,6 +1,6 @@
 import express from "express"
 import { asyncHandler } from "../utils/asyncHandler.js"
-import { changeCurrentPassword, getCurrentUser, getUserChannalProfile, getWatchHistry, loginUser, logoutUser, registerUser, updateAccountDetails, updateUserAvatar, updateUserCoverImage } from "../controllers/user.controllor.js"
+import { changeCurrentPassword, getCurrentUser, getUserChannalProfile, getWatchHistry, loginUser, logoutUser, refreshAccessToken, registerUser, updateAccountDetails, updateUserAvatar, updateUserCoverImage } from "../controllers/user.controllor.js"
 import { upload } from "../middleware/multer.middleware.js"
 import { verfiyJwt } from "../middleware/auth.middleware.js"
 
@@ -27,12 +27,13 @@ userRoute.post('/refresh-token',refreshAccessToken)
 userRoute.post('/change-password',verfiyJwt,changeCurrentPassword)
 userRoute.get('/current-user',verfiyJwt,getCurrentUser)
 
-userRoute.patch('/update-account',updateAccountDetails)
+userRoute.patch('/update-account',verfiyJwt,updateAccountDetails)
 userRoute.patch('/changeAvatar' ,verfiyJwt,upload.single('avatar'), updateUserAvatar)
 userRoute.patch('/changeCoverImage',verfiyJwt,upload.single('coverImage'),updateUserCoverImage)
 
-userRoute.get('channal/:username',verfiyJwt,getUserChannalProfile)
-userRoute.get('watchHistory',verfiyJwt,getWatchHistry)
+userRoute.get('/channal/:username',verfiyJwt,getUserChannalProfile)
+userRoute.get('/getwatchHistory',verfiyJwt,getWatchHistry)
+
 
 
 

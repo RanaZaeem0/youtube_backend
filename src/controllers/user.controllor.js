@@ -8,12 +8,8 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
 import mongoose from "mongoose";
-const UserDataCheck = zod.object({
-    username: zod.string().min(2),
-    email: zod.string().email(),
-    fullName: zod.string().min(2),
-    password: zod.string().min(2),
-});
+import { json } from "express";
+
 
 const generateAccessAndRefreshToken = async (userId) => {
     try {
@@ -36,6 +32,12 @@ const generateAccessAndRefreshToken = async (userId) => {
     }
 };
 const registerUser = asyncHandler(async (req, res) => {
+    const UserDataCheck = zod.object({
+        username: zod.string().min(2),
+        email: zod.string().email(),
+        fullName: zod.string().min(2),
+        password: zod.string().min(2),
+    });
     //   take data from frontend
     console.log("user reach hrer");
     const { username, fullName, password, email } = req.body;
@@ -69,7 +71,7 @@ const registerUser = asyncHandler(async (req, res) => {
     }
     const avatar = await uploadOnCloudinary(avatarLocalPath);
     const coverImage = await uploadOnCloudinary(coverLocalPath);
-    console.log(avatar, "avatar ho ma");
+    // console.log(avatar, "avatar ho ma");
 
     const user = await User.create({
         fullName: fullName,
@@ -79,6 +81,12 @@ const registerUser = asyncHandler(async (req, res) => {
         coverImage: coverImage?.url || "",
         avatar: avatar.url,
     });
+
+    if(!user){
+        throw new ApiError(401,
+            "user is not creted"
+        )
+    }
 
     const createdUser = await User.findOne(user._id).select(
         "-password -refreshToken"
@@ -159,6 +167,8 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
+ console.log(req.user._id);
+   await  console.log(req.user._id);
     await User.findByIdAndUpdate(
         req.user._id,
         {
@@ -176,25 +186,36 @@ const logoutUser = asyncHandler(async (req, res) => {
         secure: true,
     };
 
-    res
-        .status(200)
-        .josn(
-            clearCookie("refreshToken", options),
-            clearCookie("accessToken", options),
-            new ApiResponse(200, {}, "User is logout sccess")
-        );
+  return res.status(201)
+    .clearCookie('refreshToken',options)
+    .clearCookie('accessToken',options)
+    .json(
+        new ApiResponse(200,{},"user logout sucees")
+    )
 });
 
 const changeCurrentPassword = asyncHandler(async function (req, res) {
-    const { oldPassword, newPassword } = req.body;
+    
+    const zodpasswordData  = zod.object({
+        oldPassword:zod.string(),
+        newPassword:zod.string()
+    })
+    
+    const valiedPassworddata = zodpasswordData.safeParse(req.body)
 
-    const user = await User.findById(req.user?._id);
+    const {oldPassword,newPassword} = valiedPassworddata.data
+    
+
+if(!valiedPassworddata.success){
+    throw new ApiError(440,"oldpassord or newpasssword can not get")
+}
+    const user = await User.findById(req.user._id);
 
     if (!user) {
         throw new ApiError(401, "request user if is not valied");
     }
-
-    const isPasswordCorrect = user.isPasswordCorrect(oldPassword);
+   console.log(oldPassword);
+    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
 
     if (!isPasswordCorrect) {
         throw new ApiError(401, "oldpassword is not correct");
@@ -209,7 +230,8 @@ const changeCurrentPassword = asyncHandler(async function (req, res) {
 });
 
 const refreshAccessToken = asyncHandler(async function (req, res) {
-    try {
+    
+    
         const inComingRefreshToken =
             req.cookies?.accessToken || req.body?.accessToken;
 
@@ -231,6 +253,8 @@ const refreshAccessToken = asyncHandler(async function (req, res) {
         if (!exictedUser) {
             throw new ApiError(401, "The id accend with this token is not exectied");
         }
+        console.log(inComingRefreshToken);
+        console.log(exictedUser.refreshToken);
         if (inComingRefreshToken !== exictedUser?.refreshToken) {
             throw new ApiError(401, "Token is valied");
         }
@@ -246,18 +270,17 @@ const refreshAccessToken = asyncHandler(async function (req, res) {
 
         res
             .status(201)
-            .json(
                 cookie("refreshToken", refreshToken, options),
                 cookie("accessToken", accessToken, options),
-                new ApiResponse(
-                    200,
-                    { refreshToken, accessToken },
-                    "token is updated successfully"
-                )
+              
+                json(
+                    new ApiResponse(
+                        200,
+                        { refreshToken, accessToken },
+                        "token is updated successfully"
+                    )
             );
-    } catch (error) {
-        throw new ApiError(401, "error occur dring refreshaccesstoken ");
-    }
+   
 });
 
 const getCurrentUser = asyncHandler(async function (req, res) {
@@ -267,10 +290,18 @@ const getCurrentUser = asyncHandler(async function (req, res) {
 });
 
 const updateAccountDetails = asyncHandler(async function (req, res) {
-    const { email, fullName } = req.body;
-    if (!(email || fullName)) {
+
+
+    const updateZodschema = zod.object({
+        email:zod.string(),
+        fullName:zod.string()
+    })
+    const validateUpdateData =  updateZodschema.safeParse(req.body)
+
+    if (!validateUpdateData.success) {
         throw new ApiError(401, "emial or fullName is requide");
     }
+    const { email, fullName } = validateUpdateData.data;
 
     const user = await User.findById(req.user._id);
 
@@ -367,7 +398,7 @@ const updateUserCoverImage = asyncHandler(async function (req, res) {
 });
 
 const getUserChannalProfile = asyncHandler(async (req, res) => {
-    const { username } = req.params();
+    const { username } = req.params;
 
     if (!username?.trim()) {
         ApiError(402, "cannot get  username ");
@@ -405,7 +436,7 @@ const getUserChannalProfile = asyncHandler(async (req, res) => {
                 },
                 isSubscribed: {
                     $cond: {
-                        $if: { $in: [req?.user?._id, "$subscribers.subscriber"] },
+                        if: { $in: [req?.user?._id, "$subscribers.subscriber"] },
                         then: true,
                         else: false,
                     },
@@ -435,7 +466,7 @@ const getUserChannalProfile = asyncHandler(async (req, res) => {
 });
 
 const getWatchHistry = asyncHandler(async (req, res) => {
-    const user = User.aggregate([
+    const user = await User.aggregate([
         {
             $match: {
                 _id: new mongoose.Types.ObjectId(req.user._id),

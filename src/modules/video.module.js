@@ -1,10 +1,12 @@
 import mongoose, { Schema } from "mongoose";
+import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
+import { boolean } from "zod";
  
 
 
 
 const videoSchema = new Schema({
-    vidoeFile: {
+    videoFile: {
         type: String,
         require: true,
     },
@@ -30,11 +32,11 @@ const videoSchema = new Schema({
         default: 0
     },
     isPublished: {
-        type: true
+        type: Boolean
         , default: true,
     },
     owner: {
-        tpye: Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: 'User'
     }
 
@@ -43,6 +45,6 @@ const videoSchema = new Schema({
     timestamps:true
 }
 )
-
+videoSchema.plugin(mongooseAggregatePaginate)
 
 export const Video = mongoose.model('Video', videoSchema)
