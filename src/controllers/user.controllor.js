@@ -134,7 +134,8 @@ const loginUser = asyncHandler(async (req, res) => {
     if (!passwordIsValide) {
         throw new ApiError(400, "passwrid is not valide");
     }
-
+   console.log(user._id);
+   
     const { refreshToken, accessToken } = await generateAccessAndRefreshToken(
         user._id
     );
