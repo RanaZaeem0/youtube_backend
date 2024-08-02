@@ -80,7 +80,7 @@ const getVideoById = asyncHandler(async (req, res) => {
     const { videoId } = req?.params
     
         
-    if (!videoId || isValidObjectId(userId))  {
+    if (!(videoId || isValidObjectId(userId)))  {
         throw new ApiError(402, "cannot get the vedioID")
     }
 
