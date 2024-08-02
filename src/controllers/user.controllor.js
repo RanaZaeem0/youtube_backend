@@ -16,7 +16,7 @@ const generateAccessAndRefreshToken = async (userId) => {
         const user = await User.findById(userId);
         const accessToken = user.generateAccessToken();
 
-        const refreshToken = user.generateRefreshToken();
+        const refreshToken = await user.generateRefreshToken();
 
         user.refreshToken = refreshToken;
         await user.save({ validateBeforeSave: false });
@@ -25,6 +25,8 @@ const generateAccessAndRefreshToken = async (userId) => {
             refreshToken,
         };
     } catch (error) {
+        console.log(error + "acces tokn");
+        
         throw new ApiError(
             500,
             "Somthing went wrong during cretion of acess token and refreshtoken"
