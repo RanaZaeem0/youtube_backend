@@ -25,7 +25,7 @@ videoRoute.post('/publish',
 
         }
     ]),verfiyJwt, uploadVideo)
-videoRoute.get('/allvideo',getAllVideos)
+videoRoute.get('/allvideo/:limit',getAllVideos)
 videoRoute.get('/:videoId',getVideoById)
 videoRoute.get('/', (req, res) => [
     res.json({

@@ -210,23 +210,16 @@ const toggleIsPusblish = asyncHandler(async (req, res) => {
 const getAllVideos = asyncHandler(async (req, res) => {
 
 
-
+  const setLimit = Number(req.params?.limit)
+  console.log(setLimit,"asdsad");
     const page = parseInt(req.query.page) || 1; // Default to page 1 if not provided
-    const limit = 4; // Set limit to 30
+    const limit = setLimit ||4; // Set limit to 30
     const query = req.query.query || ''; // Filter query
     const sortBy = 'createdAt'; // Sort by createdAt
     const sortType = -1; // -1 for descending to get latest videos first
    
-const filter = {
-    title: { $regex: query, $options: 'i' } // Case-insensitive regex match
-    // Add more filters if needed
-};
 
-const options = {
-    sort: { [sortBy]: sortType }, // Sort by createdAt in descending order
-    skip: (page - 1) * limit, 
-    limit: limit // Limit to 30 documents per page
-};
+
 
 
     const allVideo =  await Video.aggregate([
