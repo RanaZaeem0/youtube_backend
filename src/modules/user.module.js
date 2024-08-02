@@ -69,9 +69,8 @@ UserSchema.methods.isPasswordCorrect = async function(password){
 }
 UserSchema.methods.generateAccessToken =  function(){
  try {
-       const expiresIn = process.env.ACCESS_TOKEN_EXPIRY;
-   
-       if (!expiresIn) {
+       const expiresIn = process.env.ACCESS_TOKEN_EXPIRY || "1h";
+       if (!expiresIn || (isNaN(expiresIn) && !/^[0-9]+[smhd]$/.test(expiresIn))) {
            throw new Error('ACCESS_TOKEN_EXPIRY is not set or invalid.');
        }
    
