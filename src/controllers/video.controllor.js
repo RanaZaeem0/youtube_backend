@@ -7,7 +7,7 @@ import mongoose, { Schema } from "mongoose";
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { upload } from "../middleware/multer.middleware.js"
 
-
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id) && (new mongoose.Types.ObjectId(id)).toString() === id;
 const uploadVideo = asyncHandler(async (req, res) => {
 
     const vediodataSchema = zod.object(
@@ -78,8 +78,9 @@ const uploadVideo = asyncHandler(async (req, res) => {
 const getVideoById = asyncHandler(async (req, res) => {
 
     const { videoId } = req?.params
-
-    if (!videoId) {
+    
+        
+    if (!videoId || isValidObjectId(userId))  {
         throw new ApiError(402, "cannot get the vedioID")
     }
 
