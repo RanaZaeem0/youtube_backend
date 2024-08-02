@@ -95,7 +95,7 @@ const getVideoById = asyncHandler(async (req, res) => {
             from: "users",
             localField: "owner", // Adjust localField if needed
             foreignField: "_id", // Adjust foreignField if needed
-            as: "userData",
+            as: "channalDetails",
             pipeline: [
               {
                 $project: {
@@ -229,12 +229,12 @@ const getAllVideos = asyncHandler(async (req, res) => {
                 from:"users",
                 localField:"owner",
                 foreignField:"_id",
-                as:"UserDetails",
+                as:"channalDetails",
                 pipeline:[
                     {
                         $addFields:{
                             UserDetails:{
-                                $first:"$UserDetails"
+                                $first:"$channalDetails"
                             }
                         }
                     },

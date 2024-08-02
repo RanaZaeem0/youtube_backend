@@ -5,7 +5,9 @@ const app = express()
 
 const connectDB = async () => {
     try {
-        const connectInstanse = await mongoose.connect(`${process.env.MONGODB_URI}/${DB_NAME}`)
+        const connectInstanse = await mongoose.connect(process.env.MONGODB_URI,{
+            dbName:DB_NAME
+        })
         app.on('error',(error)=>{
             console.log(`erorr  ${error }`);
         })
