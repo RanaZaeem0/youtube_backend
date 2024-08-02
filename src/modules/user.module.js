@@ -68,18 +68,29 @@ UserSchema.methods.isPasswordCorrect = async function(password){
     return await bcrypt.compare(password,this.password)
 }
 UserSchema.methods.generateAccessToken =  function(){
-    return jwt.sign(
-        {
-            _id: this._id,
-            email: this.email,
-            username: this.username,
-            fullName: this.fullName
-        },
-        process.env.ACCESS_TOKEN_SECRET,
-        {
-            expiresIn: process.env.ACCESS_TOKEN_EXPIRY
-        }
-    )
+ try {
+       const expiresIn = process.env.ACCESS_TOKEN_EXPIRY;
+   
+       if (!expiresIn) {
+           throw new Error('ACCESS_TOKEN_EXPIRY is not set or invalid.');
+       }
+   
+       return jwt.sign(
+           {
+               _id: this._id,
+               email: this.email,
+               username: this.username,
+               fullName: this.fullName
+           },
+           process.env.ACCESS_TOKEN_SECRET,
+           {
+               expiresIn: expiresIn
+           }
+       )
+ } catch (error) {
+    console.log(error+ "creating accestoken");
+    
+ }
     
 
 
