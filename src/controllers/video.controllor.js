@@ -14,7 +14,6 @@ const uploadVideo = asyncHandler(async (req, res) => {
         {
             title: zod.string(),
             description: zod.string(),
-            duration: zod.string(),
             views: zod.string(),
             isPublished: zod.string(),
         }
@@ -268,10 +267,62 @@ const getAllVideos = asyncHandler(async (req, res) => {
         new ApiResponse(200,allVideo)
     )
 
+})
 
+const getUserVideos = asyncHandler(async (req,res)=>{
+    const userId = req.user._id
+    
+    if(!userId){
+        throw new ApiError(401,"cannot get User Id")
+    }
+  
+    const UserVideo = await Video.aggregate([
+        {
+            $match:{
+                owner:userId
+            }
+        },
+        {
+           $lookup:{
+            from:"users",
+            localField:"owner",
+            foreignField:"_id",
+            as:"UserDetails",
+            pipeline:[
+                {
+                    $addFields:{
+                        UserDetails:{
+                            $first:'$UserDetails'
+                        }
+                    },
+        
+                }
+                  ,{
+                    $project:{
+                        username:1,
+                        email:1,
+                        avatar:1
+                    }
+                  }
+            ]
+           }
+        }
+       
+    ])
+
+
+if(!UserVideo){
+    throw new ApiError(401,"unable to get the user id")
+}
+
+res.status(201).
+json(
+    new ApiResponse(200,UserVideo,"Get all user Video")
+)
 
 
 })
+
 
 
 
@@ -280,5 +331,6 @@ export {
     getAllVideos,
     getVideoById,
     deleteVideo,
-    toggleIsPusblish
+    toggleIsPusblish,
+    getUserVideos
 }

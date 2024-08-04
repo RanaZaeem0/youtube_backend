@@ -16,7 +16,7 @@ const generateAccessAndRefreshToken = async (userId) => {
         const user = await User.findById(userId);
         const accessToken = user.generateAccessToken();
 
-        const refreshToken = await user.generateRefreshToken();
+        const refreshToken =  user.generateRefreshToken();
 
         user.refreshToken = refreshToken;
         await user.save({ validateBeforeSave: false });
@@ -40,10 +40,13 @@ const registerUser = asyncHandler(async (req, res) => {
         fullName: zod.string().min(2),
         password: zod.string().min(2),
     });
+    console.log(req.body);
+    
     //   take data from frontend
     console.log("user reach hrer");
     const { username, fullName, password, email } = req.body;
-
+  console.log(req.body);
+  
     const validate = UserDataCheck.safeParse({
         username: username,
         password: password,
@@ -83,6 +86,10 @@ const registerUser = asyncHandler(async (req, res) => {
         coverImage: coverImage?.url || "",
         avatar: avatar.url,
     });
+       
+    const { refreshToken, accessToken } = await generateAccessAndRefreshToken(
+        user._id
+    );
 
     if(!user){
         throw new ApiError(401,
@@ -98,9 +105,26 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new ApiError(403, "User is not created in database");
     }
 
+    const options  = {
+        httpOnly:true,
+        secure:true
+    }
     return res
         .status(201)
-        .json(new ApiResponse(200, createdUser, "User is created successfully"));
+        .cookie('refreshToken',refreshToken,options)
+        .cookie('accessToken',accessToken,options)
+
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    user: createdUser,
+                    accessToken,
+                    refreshToken,
+                },
+                "User Created successFully "
+            )
+        );
 });
 const loginDataCheck = zod
     .object({
