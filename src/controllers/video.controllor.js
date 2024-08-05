@@ -128,7 +128,8 @@ const getVideoById = asyncHandler(async (req, res) => {
             pipeline: [
               {
                 $project: {
-                  content: 1
+                  content: 1,
+                  owner:1,
                 }
               }
             ]
