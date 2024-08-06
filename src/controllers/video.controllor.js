@@ -8,25 +8,29 @@ import { ApiResponse } from "../utils/ApiResponse.js"
 import { upload } from "../middleware/multer.middleware.js"
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id) && (new mongoose.Types.ObjectId(id)).toString() === id;
+
+
 const uploadVideo = asyncHandler(async (req, res) => {
 
     const vediodataSchema = zod.object(
         {
             title: zod.string(),
             description: zod.string(),
-            views: zod.string(),
-            isPublished: zod.string(),
+           
         }
 
     )
-
-    const validateVedioData = vediodataSchema.safeParse(req.body)
-
+   const {title,description} = req.body
+    const validateVedioData = vediodataSchema.safeParse({
+        title:title,
+        description:description
+    })
     if (!validateVedioData.success) {
         throw new ApiError(402, "vedeo data is not vaidle")
     }
 
-    const { title, description, duration, views, isPublished } = validateVedioData.data
+   console.log(req.files,title,description);
+   
     const vedioLocalPath = req.files?.videoFile[0]?.path;
     const thumbnailLocalPath = req.files?.thumbnail[0]?.path;
 
@@ -55,9 +59,6 @@ const uploadVideo = asyncHandler(async (req, res) => {
     const video = await Video.create({
         title,
         description,
-        duration,
-        views,
-        isPublished,
         videoFile: uploadedVedioData.url,
         thumbnail: uploadedThumbnailData.url,
         owner: req.user?.id
@@ -327,11 +328,12 @@ json(
 
 
 
+
 export {
     uploadVideo,
     getAllVideos,
     getVideoById,
     deleteVideo,
     toggleIsPusblish,
-    getUserVideos
+    getUserVideos,
 }

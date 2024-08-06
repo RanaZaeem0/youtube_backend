@@ -10,11 +10,10 @@ import {
 
 const router = Router()
 
-router.use(verfiyJwt)
 
-router.route('/:videoId')
+router.route(verfiyJwt,'/:videoId')
 .post(createcomment).patch(updateComment)
-router.route('/:commentId').delete(deleteComment)
+router.route(verfiyJwt,'/:commentId').delete(deleteComment)
 
 router.route('/all/:videoId').get(getAllComments)
 

@@ -484,7 +484,7 @@ const getUserChannalProfile = asyncHandler(async (req, res) => {
         },
     ]);
 
-    if (channal?.length) {
+    if (!channal?.length) {
         throw new ApiError(440, "Channal does not excited");
     }
     res
@@ -545,6 +545,39 @@ const getWatchHistry = asyncHandler(async (req, res) => {
 
 });
 
+const UserWatchHisroy = asyncHandler(async(req,res)=>{
+    const userId  =  req.user._id
+    if(!userId){
+        throw new ApiError(401,"Unable to get Userid")
+    }
+    const {videoId} = req.params
+    if(!videoId){
+        throw new ApiError(401,"Unable to get the Videoid")
+    }
+
+    const addVideo = await User.findOneAndUpdate(
+        {
+                _id:userId
+        },
+        {
+            $push: { watchHistory: videoId } 
+        },{
+            new:true,
+            projection:{watchHistory:1}
+        },
+       
+    )
+    if(!addVideo){
+        throw new ApiError(401,"Unable to add video in user History")
+    }
+
+    res.status(201)
+    .json(
+        new ApiResponse(200,addVideo,"video add scuuess in user history")
+    )
+
+})
+
 export {
     registerUser,
     loginUser,
@@ -556,5 +589,6 @@ export {
     updateAccountDetails,
     updateUserAvatar,
     updateUserCoverImage,
-    getWatchHistry
+    getWatchHistry,
+    UserWatchHisroy
 };

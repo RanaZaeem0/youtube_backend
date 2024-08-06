@@ -1,6 +1,6 @@
 import express from "express"
 import { asyncHandler } from "../utils/asyncHandler.js"
-import { changeCurrentPassword, getCurrentUser, getUserChannalProfile, getWatchHistry, loginUser, logoutUser, refreshAccessToken, registerUser, updateAccountDetails, updateUserAvatar, updateUserCoverImage } from "../controllers/user.controllor.js"
+import { changeCurrentPassword, getCurrentUser, getUserChannalProfile, getWatchHistry, loginUser, logoutUser, refreshAccessToken, registerUser, updateAccountDetails, updateUserAvatar, updateUserCoverImage, UserWatchHisroy } from "../controllers/user.controllor.js"
 import { upload } from "../middleware/multer.middleware.js"
 import { verfiyJwt } from "../middleware/auth.middleware.js"
 
@@ -33,6 +33,8 @@ userRoute.patch('/changeCoverImage',verfiyJwt,upload.single('coverImage'),update
 
 userRoute.get('/channal/:username',verfiyJwt,getUserChannalProfile)
 userRoute.get('/getwatchHistory',verfiyJwt,getWatchHistry)
+userRoute.post('/addWatchHistory/:videoId',verfiyJwt,UserWatchHisroy)
+
 
 
 
