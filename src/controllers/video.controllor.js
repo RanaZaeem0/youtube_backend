@@ -6,6 +6,7 @@ import { Video } from "../modules/video.module.js";
 import mongoose, { Schema } from "mongoose";
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { upload } from "../middleware/multer.middleware.js"
+import { User } from "../modules/user.module.js";
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id) && (new mongoose.Types.ObjectId(id)).toString() === id;
 
@@ -325,12 +326,55 @@ json(
 
 })
 
+const getChannalVideo = asyncHandler(async(req,res)=>{
 
+    
+    const { username } = req.params;
+
+    if (!username?.trim()) {
+        ApiError(402, "cannot get  username ");
+    }
+
+    const channalVideo = await User.aggregate([
+        {
+            $match: {
+                username: username?.toLowerCase(),
+            },
+        },
+        {
+            $lookup: {
+                from: "videos",
+                localField: "_id",
+                foreignField: "owner",
+                as: "ChannalVideo",
+            },
+        },
+        
+       {
+        $project:{
+            ChannalVideo:1
+        }
+       }
+   
+     
+    ])
+
+    if (!channalVideo?.length) {
+        throw new ApiError(440, "Channal does not excited");
+    }
+    res
+        .status(201)
+        .json(new ApiResponse(200, channalVideo, "channal video  data get sccuessfully"));
+
+
+
+})
 
 
 
 export {
     uploadVideo,
+    getChannalVideo,
     getAllVideos,
     getVideoById,
     deleteVideo,

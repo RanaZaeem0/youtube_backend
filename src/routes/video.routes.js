@@ -4,7 +4,8 @@ import {     uploadVideo,
     getVideoById,
     deleteVideo,
     toggleIsPusblish, 
-    getUserVideos} from "../controllers/video.controllor.js"
+    getUserVideos,
+    getChannalVideo} from "../controllers/video.controllor.js"
 import {upload} from "../middleware/multer.middleware.js"
 import { verfiyJwt } from "../middleware/auth.middleware.js"
 
@@ -28,7 +29,7 @@ videoRoute.post('/publish',
     ]),verfiyJwt, uploadVideo)
 videoRoute.get('/allvideo/:limit',getAllVideos)
 videoRoute.get('/:videoId',getVideoById)
-
+videoRoute.get('/channalvideo/:username',getChannalVideo)
 videoRoute.route('/').get(verfiyJwt,getUserVideos)
 videoRoute.delete('/:videoId',verfiyJwt,deleteVideo)
 videoRoute.patch('/:videoId',verfiyJwt,toggleIsPusblish)
