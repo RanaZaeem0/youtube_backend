@@ -31,7 +31,7 @@ userRoute.patch('/update-account',verfiyJwt,updateAccountDetails)
 userRoute.patch('/changeAvatar' ,verfiyJwt,upload.single('avatar'), updateUserAvatar)
 userRoute.patch('/changeCoverImage',verfiyJwt,upload.single('coverImage'),updateUserCoverImage)
 
-userRoute.get('/channal/:username',verfiyJwt,getUserChannalProfile)
+userRoute.get('/channal/:username',getUserChannalProfile)
 userRoute.get('/getwatchHistory',verfiyJwt,getWatchHistry)
 userRoute.post('/addWatchHistory/:videoId',verfiyJwt,UserWatchHisroy)
 

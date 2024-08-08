@@ -425,8 +425,9 @@ const updateUserCoverImage = asyncHandler(async function (req, res) {
 });
 
 const getUserChannalProfile = asyncHandler(async (req, res) => {
-    const { username } = req.params;
+    const encodedUsername = req.params.username;
 
+     const username = decodeURIComponent(encodedUsername)
     if (!username?.trim()) {
         ApiError(402, "cannot get  username ");
     }
