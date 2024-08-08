@@ -222,44 +222,65 @@ const getAllVideos = asyncHandler(async (req, res) => {
     const sortType = -1; // -1 for descending to get latest videos first
    
 
-
-
-
-    const allVideo =  await Video.aggregate([
+    const results = await Video.aggregate([
         {
-            $lookup:{
-                from:"users",
-                localField:"owner",
-                foreignField:"_id",
-                as:"channalDetails",
-                pipeline:[
+          $facet: {
+            metadata: [
+              { $count: "total" } // Get the total number of documents
+            ],
+            data: [
+              {
+                $lookup: {
+                  from: "users",
+                  localField: "owner",
+                  foreignField: "_id",
+                  as: "channalDetails",
+                  pipeline: [
                     {
-                        $addFields:{
-                            UserDetails:{
-                                $first:"$channalDetails"
-                            }
+                      $addFields: {
+                        UserDetails: {
+                          $first: "$channalDetails"
                         }
+                      }
                     },
                     {
-                        $project:{
-                            avatar:1,
-                            username:1,
-                            email:1
-                        }
+                      $project: {
+                        avatar: 1,
+                        username: 1,
+                        email: 1,total:``
+                      }
                     }
-                ]
-
+                  ]
+                }
+              },
+              { $sort: { [sortBy]: sortType } }, // Sort by the specified field
+              { $skip: (page - 1) * limit }, // Skip documents based on the page number
+              { $limit: limit } // Limit to the specified number of documents per page
+            ]
+          }
+        },
+        {
+          $addFields: {
+            "metadata.total": { $arrayElemAt: ["$metadata.total", 0] } // Extract total count
+          }
+        },
+        {
+          $addFields: {
+            hasMore: {
+              $cond: {
+                if: { $gt: ["$metadata.total", { $multiply: [limit, page] }] }, // Check if more pages are available
+                then: true,
+                else: false
+              }
             }
-            
-
+          }
         }
-    ])
-    .sort({ [sortBy]: sortType }) // Sort by createdAt in descending order
-    .skip((page - 1) * limit) // Skip documents based on page number
-    .limit(limit) // Limit to 30 documents per page
-    .exec(); // Execute the query
+      ]).exec();
+      
+      const videos = results[0].data;
+      const hasMore = results[0].hasMore;
     
-    if(!allVideo){
+    if(!videos){
         throw new ApiError(401,"error canot get all video")
     }
 
@@ -267,7 +288,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
     res.status(201)
     .json(
-        new ApiResponse(200,allVideo)
+        new ApiResponse(200,[videos,{hasMore}],"vies get succeses")
     )
 
 })
