@@ -11,7 +11,7 @@ const createcomment = asyncHandler(async(req,res)=>{
     const userId = req.user?._id
    const {content} = req.body
     const {videoId} = req.params;
-
+  console.log(req.user)
     if(!userId){
         throw new ApiError(401,
             "Unable to get user id"

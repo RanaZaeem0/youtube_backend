@@ -8,7 +8,6 @@ import zod from "zod"
 const createPlaylist = asyncHandler(async (req, res) => {
     const playlistSchema = zod.object({
         name: zod.string(),
-        description: zod.string()
     })
     const valiedplaylist = playlistSchema.safeParse(req.body)
 
@@ -16,7 +15,7 @@ const createPlaylist = asyncHandler(async (req, res) => {
 
 
     if (!valiedplaylist.success) {
-        throw new ApiError(401, "name or decription is not valid")
+        throw new ApiError(401, "name or  is not valid")
     } else if (!userId) {
         throw new ApiError(400, "can not get User Id")
     }
@@ -25,7 +24,6 @@ const createPlaylist = asyncHandler(async (req, res) => {
     const playlist = Playlist.create(
         {
             name: name,
-            description: description,
             owner: userId,
 
         }

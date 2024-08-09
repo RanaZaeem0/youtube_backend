@@ -19,6 +19,7 @@
     "nodemon": "^3.1.4"
   },
   "dependencies": {
+    "@types/uuid": "^10.0.0",
     "bcrypt": "^5.1.1",
     "cloudinary": "^2.3.1",
     "cookie-parser": "^1.4.6",
@@ -30,6 +31,7 @@
     "mongoose-aggregate-paginate-v2": "^1.1.2",
     "multer": "^1.4.5-lts.1",
     "prettier": "^3.3.3",
+    "uuid": "^10.0.0",
     "zod": "^3.23.8"
   }
 }
