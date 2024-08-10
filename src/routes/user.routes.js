@@ -21,6 +21,7 @@ userRoute.post('/register',
    ])
     , registerUser)
 
+    
 userRoute.post('/login',loginUser)    
 userRoute.post('/logout',verfiyJwt,logoutUser)    
 userRoute.post('/refresh-token',refreshAccessToken)    
