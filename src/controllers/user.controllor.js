@@ -34,97 +34,102 @@ const generateAccessAndRefreshToken = async (userId) => {
     }
 };
 const registerUser = asyncHandler(async (req, res) => {
-    const UserDataCheck = zod.object({
-        username: zod.string().min(2),
-        email: zod.string().email(),
-        fullName: zod.string().min(2),
-        password: zod.string().min(2),
-    });
+  try {
+      const UserDataCheck = zod.object({
+          username: zod.string().min(2),
+          email: zod.string().email(),
+          fullName: zod.string().min(2),
+          password: zod.string().min(2),
+      });
+      console.log(req.body);
+      
+      //   take data from frontend
+      console.log("user reach hrer");
+      const { username, fullName, password, email } = req.body;
     console.log(req.body);
     
-    //   take data from frontend
-    console.log("user reach hrer");
-    const { username, fullName, password, email } = req.body;
-  console.log(req.body);
+      const validate = UserDataCheck.safeParse({
+          username: username,
+          password: password,
+          fullName: fullName,
+          email: email,
+      });
+      if (!validate.success) {
+          throw new ApiError(400, "user data is not valid");
+      }
   
-    const validate = UserDataCheck.safeParse({
-        username: username,
-        password: password,
-        fullName: fullName,
-        email: email,
-    });
-    if (!validate.success) {
-        throw new ApiError(400, "user data is not valid");
-    }
+      const exictedUser = await User.findOne({
+          or: [{ username }, { email }],
+      });
+  
+      if (exictedUser) {
+          throw new ApiError(401, "User Name or email is Alredy Exicted");
+      }
+  
+      const avatarLocalPath = req.files?.avatar[0]?.path;
+      const coverLocalPath = req.files?.coverImage[0]?.path;
+  
+      if (!avatarLocalPath) {
+          throw new ApiError(
+              402,
+              "Avatar image local path dont avalible does not execit"
+          );
+      }
+      const avatar = await uploadOnCloudinary(avatarLocalPath);
+      const coverImage = await uploadOnCloudinary(coverLocalPath);
+      // console.log(avatar, "avatar ho ma");
+  
+      const user = await User.create({
+          fullName: fullName,
+          username,
+          email,
+          password,
+          coverImage: coverImage?.url || "",
+          avatar: avatar.url,
+      });
+         
+      const { refreshToken, accessToken } = await generateAccessAndRefreshToken(
+          user._id
+      );
+  
+      if(!user){
+          throw new ApiError(401,
+              "user is not creted"
+          )
+      }
+  
+      const createdUser = await User.findOne(user._id).select(
+          "-password -refreshToken"
+      );
+  
+      if (!createdUser) {
+          throw new ApiError(403, "User is not created in database");
+      }
+  
+      const options  = {
+          httpOnly:true,
+          secure:true
+      }
+      return res
+      .status(201)
+      .cookie('refreshToken',refreshToken,options)
+      .cookie('accessToken',accessToken,options)
 
-    const exictedUser = await User.findOne({
-        or: [{ username }, { email }],
-    });
-
-    if (exictedUser) {
-        throw new ApiError(401, "User Name or email is Alredy Exicted");
-    }
-
-    const avatarLocalPath = req.files?.avatar[0]?.path;
-    const coverLocalPath = req.files?.coverImage[0]?.path;
-
-    if (!avatarLocalPath) {
-        throw new ApiError(
-            402,
-            "Avatar image local path dont avalible does not execit"
-        );
-    }
-    const avatar = await uploadOnCloudinary(avatarLocalPath);
-    const coverImage = await uploadOnCloudinary(coverLocalPath);
-    // console.log(avatar, "avatar ho ma");
-
-    const user = await User.create({
-        fullName: fullName,
-        username,
-        email,
-        password,
-        coverImage: coverImage?.url || "",
-        avatar: avatar.url,
-    });
-       
-    const { refreshToken, accessToken } = await generateAccessAndRefreshToken(
-        user._id
-    );
-
-    if(!user){
-        throw new ApiError(401,
-            "user is not creted"
-        )
-    }
-
-    const createdUser = await User.findOne(user._id).select(
-        "-password -refreshToken"
-    );
-
-    if (!createdUser) {
-        throw new ApiError(403, "User is not created in database");
-    }
-
-    const options  = {
-        httpOnly:true,
-        secure:true
-    }
-    return res
-        .status(201)
-        .cookie('refreshToken',refreshToken,options)
-        .cookie('accessToken',accessToken,options)
-
-        .json(
-            new ApiResponse(
-                200,
-                {
-                    user: createdUser,
-                    accessToken,
-                    refreshToken,
-                },
-                "User Created successFully "
-            )
-        );
+      .json(
+          new ApiResponse(
+              200,
+              {
+                  user: createdUser,
+                  accessToken,
+                  refreshToken,
+              },
+              "User Created successFully "
+          )
+      );
+  } catch (error) {
+    throw new ApiError(401,error)
+  }
+   
 });
 const loginDataCheck = zod
     .object({
@@ -359,8 +364,9 @@ const updateAccountDetails = asyncHandler(async function (req, res) {
 });
 
 const updateUserAvatar = asyncHandler(async function (req, res) {
-    const { newAvatarLocalPath } = req.files?.avatar?.path;
-
+    console.log(req.file);
+    const  newAvatarLocalPath  = req.file?.path;
+   
     if (!newAvatarLocalPath) {
         throw new ApiError(201, "new avatar local path is not define");
     }
@@ -372,7 +378,7 @@ const updateUserAvatar = asyncHandler(async function (req, res) {
     }
 
     const user = await User.findByIdAndUpdate(
-        req.User._id,
+        req.user._id,
         {
             $set: {
                 avatar: uploadNewAvatar.url,
@@ -381,7 +387,7 @@ const updateUserAvatar = asyncHandler(async function (req, res) {
         {
             new: true,
         }
-    ).select("-password");
+    ).select("-password -refreshToken");
 
     if (!user) {
         throw new ApiError(402, "something withWorng when update the avatar");

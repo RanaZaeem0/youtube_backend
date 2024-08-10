@@ -3,7 +3,8 @@ import {     uploadVideo,
     getAllVideos,
     getVideoById,
     deleteVideo,
-    toggleIsPusblish, 
+    toggleIsPusblish,
+   
     getUserVideos,
     getChannalVideo} from "../controllers/video.controllor.js"
 import {upload} from "../middleware/multer.middleware.js"
