@@ -38,20 +38,18 @@ const registerUser = asyncHandler(async (req, res) => {
       const UserDataCheck = zod.object({
           username: zod.string().min(2),
           email: zod.string().email(),
-          fullName: zod.string().min(2),
           password: zod.string().min(2),
       });
       console.log(req.body);
       
       //   take data from frontend
       console.log("user reach hrer");
-      const { username, fullName, password, email } = req.body;
+      const { username,  password, email } = req.body;
     console.log(req.body);
     
       const validate = UserDataCheck.safeParse({
           username: username,
           password: password,
-          fullName: fullName,
           email: email,
       });
       if (!validate.success) {
@@ -80,7 +78,6 @@ const registerUser = asyncHandler(async (req, res) => {
       // console.log(avatar, "avatar ho ma");
   
       const user = await User.create({
-          fullName: fullName,
           username,
           email,
           password,
@@ -326,14 +323,13 @@ const updateAccountDetails = asyncHandler(async function (req, res) {
 
     const updateZodschema = zod.object({
         email:zod.string(),
-        fullName:zod.string()
     })
     const validateUpdateData =  updateZodschema.safeParse(req.body)
 
     if (!validateUpdateData.success) {
-        throw new ApiError(401, "emial or fullName is requide");
+        throw new ApiError(401, "emial  is requide");
     }
-    const { email, fullName } = validateUpdateData.data;
+    const { email } = validateUpdateData.data;
 
     const user = await User.findById(req.user._id);
 
@@ -345,7 +341,6 @@ const updateAccountDetails = asyncHandler(async function (req, res) {
         req.user._id,
         {
             $set: {
-                fullName,
                 email,
             },
         },
@@ -479,7 +474,6 @@ const getUserChannalProfile = asyncHandler(async (req, res) => {
         },
         {
             $project: {
-                fullName: 1,
                 username: 1,
                 subscribersCount: 1,
                 channelsSubscribedToCount: 1,
