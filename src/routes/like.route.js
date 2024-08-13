@@ -1,18 +1,17 @@
 import { Router } from "express";
-import { getLikedVideos, toggleCommentLike, toggleVideoLike } from "../controllers/like.controller.js";
+import { getLikedVideos, getUserLikeVideo, toggleCommentLike, toggleVideoLike } from "../controllers/like.controller.js";
 import {verfiyJwt} from "../middleware/auth.middleware.js"
 
 const router = Router()
 
-router.use(verfiyJwt)
 router.route('/:videoId')
-.get(getLikedVideos)
-.patch(toggleVideoLike)
+.patch(verfiyJwt,toggleVideoLike)
 
-router.route('/:commentId')
-.patch(toggleCommentLike)
-
-
+router.route(verfiyJwt,'/:commentId')
+.patch(verfiyJwt,toggleCommentLike)
+router.route('/likeVideo').get(
+    verfiyJwt,getLikedVideos
+)
 
 
 

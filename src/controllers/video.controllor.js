@@ -84,6 +84,10 @@ const getVideoById = asyncHandler(async (req, res) => {
     if (!(videoId || isValidObjectId(userId)))  {
         throw new ApiError(402, "cannot get the vedioID")
     }
+    // This is pass my Localvarible
+  const userId= req?.headers.userid
+  console.log(userId);
+  
 
     const getSingleVideo = await Video.aggregate([
         {
@@ -115,7 +119,7 @@ const getVideoById = asyncHandler(async (req, res) => {
                     
                     isSubscribed: {
                         $cond: {
-                            if: { $in: [req?.user?._id, "$subscribers.subscriber"] },
+                            if: { $in: [new mongoose.Types.ObjectId(userId), "$subscribers.subscriber"] },
                             then: true,
                             else: false,
                         },

@@ -49,7 +49,7 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
     )
 
   }
- })
+})
 const toggleCommentLike = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
   const userId = req.user._id
@@ -92,16 +92,20 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
 
 
 
- }
+  }
 })
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  const userId = req.user._id
+  const userId = req.user?._id
+  console.log(req.user);
+
   if (!videoId) {
     throw new ApiError(402, "Cannot get the video id !")
   }
-
+  if (!userId) {
+    throw new ApiError(402, "Canot get userid")
+  }
   const alredyExicted = await Like.findOne({
     video: videoId,
     likedBy: userId
@@ -148,36 +152,88 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
     )
 })
 const getLikedVideos = asyncHandler(async (req, res) => {
-  const { videoId } = req.params;
 
-  if (!videoId) {
-    throw new ApiError(401, "Unable to get vidoe id")
+  const userId = req.user._id
+
+  if (!userId) {
+    throw new ApiError(401, "Cannot getuserid")
   }
 
 
-
-  const likedVideos = await Like.find(
+  const userLikeVideo = await Like.aggregate([
     {
-        likedBy: req.user._id,
-        video:{$ne: null}
-    }
-).populate("video")
+      $match: {
+        likedBy: userId
+      }
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "video",
+        foreignField: "_id",
+        as: "VideoData",
+        pipeline: [
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "ChannalDetails",
+              pipeline: [
+                {
+                  $project: {
+                    username: 1,
+                    email: 1,
+                    avatar: 1
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+  
+
+  ]);
 
 
 
-  console.log(likedVideos);
 
-  if(!likedVideos){
-    throw new ApiError(401,"cannot get like with this vidoe")
+  console.log(userLikeVideo);
+
+  if (!userLikeVideo) {
+    throw new ApiError(401, "cannot get like with this vidoe")
   }
-res.status(201)
-.json(
-  new ApiResponse(200,likedVideos,"get all of the video ")
-)
+  res.status(201)
+    .json(
+      new ApiResponse(200, userLikeVideo, "get all of the video ")
+    )
 })
 
 
+const getUserLikeVideo = asyncHandler(async (req, res) => {
+  const userId = req.user._id
+  console.log(req);
 
+  if (!userId) {
+    throw new ApiError(401,
+      "Unable to get ht user id"
+    )
+  }
+
+
+
+  if (!userLikeVideo) {
+    throw new ApiError(402, "Unable to get all like video")
+  }
+
+  res.status(201).
+    json(
+      new ApiResponse(201, userLikeVideo, "All get like video sucessss")
+    )
+
+})
 
 
 
@@ -191,5 +247,6 @@ export {
   toggleCommentLike,
   toggleTweetLike,
   toggleVideoLike,
-  getLikedVideos
+  getLikedVideos,
+  getUserLikeVideo
 }
