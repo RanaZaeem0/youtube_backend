@@ -31,7 +31,7 @@ const verfiyJwt = asyncHandler(async function (req, res, next) {
     console.log(error);
     throw new ApiError(444,"authization falied")
   }
-    
+  
 
 })
 

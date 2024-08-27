@@ -41,7 +41,16 @@ const uploadOnCloudinary = async (fileLocalPath) => {
 
 
   } catch (error) {
-    fs.unlinkSync(fileLocalPath)
+    const deleteFileSync = (filelocalpath) => {
+      try {
+        fs.unlinkSync(filelocalpath);
+        console.log(`File deleted successfully: ${filelocalpath}`);
+      } catch (err) {
+        console.error(`Error deleting file: ${err.message}`);
+      }
+    };
+    deleteFileSync(fileLocalPath)
+    console.log('file  unlink');
     return console.log(`Error during upload `);
 
   }

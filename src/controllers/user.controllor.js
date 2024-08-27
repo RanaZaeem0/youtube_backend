@@ -16,7 +16,7 @@ const generateAccessAndRefreshToken = async (userId) => {
         const user = await User.findById(userId);
         const accessToken = user.generateAccessToken();
 
-        const refreshToken =  user.generateRefreshToken();
+        const refreshToken = user.generateRefreshToken();
 
         user.refreshToken = refreshToken;
         await user.save({ validateBeforeSave: false });
@@ -26,7 +26,7 @@ const generateAccessAndRefreshToken = async (userId) => {
         };
     } catch (error) {
         console.log(error + "acces tokn");
-        
+
         throw new ApiError(
             500,
             "Somthing went wrong during cretion of acess token and refreshtoken"
@@ -34,99 +34,105 @@ const generateAccessAndRefreshToken = async (userId) => {
     }
 };
 const registerUser = asyncHandler(async (req, res) => {
-  try {
-      const UserDataCheck = zod.object({
-          username: zod.string().min(2),
-          email: zod.string().email(),
-          password: zod.string().min(2),
-      });
-      console.log(req.body);
-      
-      //   take data from frontend
-      console.log("user reach hrer");
-      const { username,  password, email } = req.body;
-    console.log(req.body);
-    
-      const validate = UserDataCheck.safeParse({
-          username: username,
-          password: password,
-          email: email,
-      });
-      if (!validate.success) {
-          throw new ApiError(400, "user data is not valid");
-      }
-  
-      const exictedUser = await User.findOne({
-          or: [{ username }, { email }],
-      });
-  
-      if (exictedUser) {
-          throw new ApiError(401, "User Name or email is Alredy Exicted");
-      }
-  
-      const avatarLocalPath = req.files?.avatar[0]?.path;
-      const coverLocalPath = req.files?.coverImage[0]?.path;
-  
-      if (!avatarLocalPath) {
-          throw new ApiError(
-              402,
-              "Avatar image local path dont avalible does not execit"
-          );
-      }
-      const avatar = await uploadOnCloudinary(avatarLocalPath);
-      const coverImage = await uploadOnCloudinary(coverLocalPath);
-      // console.log(avatar, "avatar ho ma");
-  
-      const user = await User.create({
-          username,
-          email,
-          password,
-          coverImage: coverImage?.url || "",
-          avatar: avatar.url,
-      });
-         
-      const { refreshToken, accessToken } = await generateAccessAndRefreshToken(
-          user._id
-      );
-  
-      if(!user){
-          throw new ApiError(401,
-              "user is not creted"
-          )
-      }
-  
-      const createdUser = await User.findOne(user._id).select(
-          "-password -refreshToken"
-      );
-  
-      if (!createdUser) {
-          throw new ApiError(403, "User is not created in database");
-      }
-  
-      const options  = {
-          httpOnly:true,
-          secure:true
-      }
-      return res
-      .status(201)
-      .cookie('refreshToken',refreshToken,options)
-      .cookie('accessToken',accessToken,options)
+    try {
 
-      .json(
-          new ApiResponse(
-              200,
-              {
-                  user: createdUser,
-                  accessToken,
-                  refreshToken,
-              },
-              "User Created successFully "
-          )
-      );
-  } catch (error) {
-    throw new ApiError(401,error)
-  }
-   
+        const UserDataCheck = zod.object({
+            username: zod.string().min(2),
+            email: zod.string().email(),
+            password: zod.string().min(2),
+        });
+        console.log(req.body ,"daas");
+
+        //   take data from frontend
+        console.log(req.body);
+        const { username, password, email } = req.body;
+        console.log(req.body);
+
+        const validate = UserDataCheck.safeParse({
+            username: username,
+            password: password,
+            email: email,
+        });
+        if (!validate.success) {
+            throw new ApiError(400, "user data is not valid");
+        }
+
+        const exictedUser = await User.findOne({
+            or: [{ username }, { email }],
+        });
+
+        if (exictedUser) {
+            throw new ApiError(401, "User Name or email is Alredy Exicted");
+        }
+
+        const avatarLocalPath = req?.files?.avatar?.[0]?.path;
+        const coverLocalPath = req?.files?.coverImage?.[0]?.path;
+        
+    
+        let avatar
+        if(avatarLocalPath){
+            avatar = await uploadOnCloudinary(avatarLocalPath);
+        }
+        let coverImage
+        if(coverLocalPath){
+             coverImage = await uploadOnCloudinary(coverLocalPath);
+        }
+
+
+       
+       
+        // console.log(avatar, "avatar ho ma");
+
+        const user = await User.create({
+            username,
+            email,
+            password,
+            coverImage: coverImage?.url || "",
+            avatar: avatar?.url || "",
+        });
+
+        const { refreshToken, accessToken } = await generateAccessAndRefreshToken(
+            user._id
+        );
+
+        if (!user) {
+            throw new ApiError(401,
+                "user is not creted"
+            )
+        }
+
+        const createdUser = await User.findOne(user._id).select(
+            "-password -refreshToken"
+        );
+
+        if (!createdUser) {
+            throw new ApiError(403, "User is not created in database");
+        }
+
+        const options = {
+            httpOnly: true,
+            secure: true
+        }
+        return res
+            .status(201)
+            .cookie('refreshToken', refreshToken, options)
+            .cookie('accessToken', accessToken, options)
+
+            .json(
+                new ApiResponse(
+                    200,
+                    {
+                        user: createdUser,
+                        accessToken,
+                        refreshToken,
+                    },
+                    "User Created successFully "
+                )
+            );
+    } catch (error) {
+        throw new ApiError(401, error)
+    }
+
 });
 const loginDataCheck = zod
     .object({
@@ -160,8 +166,8 @@ const loginUser = asyncHandler(async (req, res) => {
     if (!passwordIsValide) {
         throw new ApiError(400, "passwrid is not valide");
     }
-   console.log(user._id);
-   
+    console.log(user._id);
+
     const { refreshToken, accessToken } = await generateAccessAndRefreshToken(
         user._id
     );
@@ -196,8 +202,8 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
- console.log(req.user._id);
-   await  console.log(req.user._id);
+    console.log(req.user._id);
+    await console.log(req.user._id);
     await User.findByIdAndUpdate(
         req.user._id,
         {
@@ -215,35 +221,35 @@ const logoutUser = asyncHandler(async (req, res) => {
         secure: true,
     };
 
-  return res.status(201)
-    .clearCookie('refreshToken',options)
-    .clearCookie('accessToken',options)
-    .json(
-        new ApiResponse(200,{},"user logout sucees")
-    )
+    return res.status(201)
+        .clearCookie('refreshToken', options)
+        .clearCookie('accessToken', options)
+        .json(
+            new ApiResponse(200, {}, "user logout sucees")
+        )
 });
 
 const changeCurrentPassword = asyncHandler(async function (req, res) {
-    
-    const zodpasswordData  = zod.object({
-        oldPassword:zod.string(),
-        newPassword:zod.string()
+
+    const zodpasswordData = zod.object({
+        oldPassword: zod.string(),
+        newPassword: zod.string()
     })
-    
+
     const valiedPassworddata = zodpasswordData.safeParse(req.body)
 
-    const {oldPassword,newPassword} = valiedPassworddata.data
-    
+    const { oldPassword, newPassword } = valiedPassworddata.data
 
-if(!valiedPassworddata.success){
-    throw new ApiError(440,"oldpassord or newpasssword can not get")
-}
+
+    if (!valiedPassworddata.success) {
+        throw new ApiError(440, "oldpassord or newpasssword can not get")
+    }
     const user = await User.findById(req.user._id);
 
     if (!user) {
         throw new ApiError(401, "request user if is not valied");
     }
-   console.log(oldPassword);
+    console.log(oldPassword);
     const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
 
     if (!isPasswordCorrect) {
@@ -259,57 +265,58 @@ if(!valiedPassworddata.success){
 });
 
 const refreshAccessToken = asyncHandler(async function (req, res) {
+
+
+    const inComingRefreshToken = req.body?.refreshToken;
+
+    if (!inComingRefreshToken) {
+        throw new ApiError(402, "Cannot get token on incmong reqest");
+    }
+    console.log(inComingRefreshToken, "incoing")
+
+    let decodedToken;
+    try {
+        decodedToken = jwt.decode(inComingRefreshToken);
+    } catch (error) {
+        console.error("Token verification error:", error);
+        throw new ApiError(401, "Invalid or expired refresh token.");
+    }
+
+    if (!decodedToken) {
+        throw new ApiError(401, "Unauthorerzie Token");
+    }
+
+    const exictedUser = await User.findById(decodedToken._id);
+
+    if (!exictedUser) {
+        throw new ApiError(401, "The id accend with this token is not exectied");
+    }
     
-    
-        const inComingRefreshToken =
-            req.cookies?.accessToken || req.body?.accessToken;
+    if (inComingRefreshToken !== exictedUser?.refreshToken) {
+        throw new ApiError(401, "Token is valied");
+    }
 
-        if (!inComingRefreshToken) {
-            throw new ApiError(402, "Cannot get token on incmong reqest");
-        }
+    const { refreshToken, accessToken } = await generateAccessAndRefreshToken(
+        exictedUser._id
+    );
 
-        const decodedToken = jwt.verify(
-            inComingRefreshToken,
-            process.env.ACCESS_TOKEN_SECRET
-        );
+    const options = {
+        httpOnly: true,
+        secure: true,
+    };
 
-        if (!decodedToken) {
-            throw new ApiError(401, "Unauthorerzie Token");
-        }
+    return res
+        .status(201)
+        .cookie("refreshToken", refreshToken, options)
+        .cookie("accessToken", accessToken, options)
+    .json(
+        new ApiResponse(
+            200,
+            { refreshToken, accessToken },
+            "token is updated successfully"
+        )
+    );
 
-        const exictedUser = await User.findById(decodedToken._id);
-
-        if (!exictedUser) {
-            throw new ApiError(401, "The id accend with this token is not exectied");
-        }
-        console.log(inComingRefreshToken);
-        console.log(exictedUser.refreshToken);
-        if (inComingRefreshToken !== exictedUser?.refreshToken) {
-            throw new ApiError(401, "Token is valied");
-        }
-
-        const { refreshToken, accessToken } = await generateAccessAndRefreshToken(
-            exictedUser._id
-        );
-
-        const options = {
-            httpOnly: true,
-            secure: true,
-        };
-
-        res
-            .status(201)
-                cookie("refreshToken", refreshToken, options),
-                cookie("accessToken", accessToken, options),
-              
-                json(
-                    new ApiResponse(
-                        200,
-                        { refreshToken, accessToken },
-                        "token is updated successfully"
-                    )
-            );
-   
 });
 
 const getCurrentUser = asyncHandler(async function (req, res) {
@@ -322,9 +329,9 @@ const updateAccountDetails = asyncHandler(async function (req, res) {
 
 
     const updateZodschema = zod.object({
-        email:zod.string(),
+        email: zod.string(),
     })
-    const validateUpdateData =  updateZodschema.safeParse(req.body)
+    const validateUpdateData = updateZodschema.safeParse(req.body)
 
     if (!validateUpdateData.success) {
         throw new ApiError(401, "emial  is requide");
@@ -360,8 +367,8 @@ const updateAccountDetails = asyncHandler(async function (req, res) {
 
 const updateUserAvatar = asyncHandler(async function (req, res) {
     console.log(req.file);
-    const  newAvatarLocalPath  = req.file?.path;
-   
+    const newAvatarLocalPath = req.file?.path;
+
     if (!newAvatarLocalPath) {
         throw new ApiError(201, "new avatar local path is not define");
     }
@@ -428,11 +435,12 @@ const updateUserCoverImage = asyncHandler(async function (req, res) {
 const getUserChannalProfile = asyncHandler(async (req, res) => {
     const encodedUsername = req.params.username;
 
-     const username = decodeURIComponent(encodedUsername)
+    const username = decodeURIComponent(encodedUsername)
     if (!username?.trim()) {
         ApiError(402, "cannot get  username ");
     }
-
+    const userId = req?.headers.userid;
+    console.log(userId);
     const channal = await User.aggregate([
         {
             $match: {
@@ -465,7 +473,7 @@ const getUserChannalProfile = asyncHandler(async (req, res) => {
                 },
                 isSubscribed: {
                     $cond: {
-                        if: { $in: [req?.user?._id, "$subscribers.subscriber"] },
+                        if: { $in: [new mongoose.Types.ObjectId(userId), "$subscribers.subscriber"] },
                         then: true,
                         else: false,
                     },
@@ -539,43 +547,43 @@ const getWatchHistry = asyncHandler(async (req, res) => {
     ]);
 
 
-   return res.status(201)
-   .json(
-    new ApiResponse(200,user[0].watchHistory,"user watch histroy data get sccuess fully")
-   )
+    return res.status(201)
+        .json(
+            new ApiResponse(200, user[0].watchHistory, "user watch histroy data get sccuess fully")
+        )
 
 });
 
-const UserWatchHisroy = asyncHandler(async(req,res)=>{
-    const userId  =  req.user._id
-    if(!userId){
-        throw new ApiError(401,"Unable to get Userid")
+const UserWatchHisroy = asyncHandler(async (req, res) => {
+    const userId = req.user._id
+    if (!userId) {
+        throw new ApiError(401, "Unable to get Userid")
     }
-    const {videoId} = req.params
-    if(!videoId){
-        throw new ApiError(401,"Unable to get the Videoid")
+    const { videoId } = req.params
+    if (!videoId) {
+        throw new ApiError(401, "Unable to get the Videoid")
     }
 
     const addVideo = await User.findOneAndUpdate(
         {
-                _id:userId
+            _id: userId
         },
         {
-            $push: { watchHistory: videoId } 
-        },{
-            new:true,
-            projection:{watchHistory:1}
-        },
-       
+            $push: { watchHistory: videoId }
+        }, {
+        new: true,
+        projection: { watchHistory: 1 }
+    },
+
     )
-    if(!addVideo){
-        throw new ApiError(401,"Unable to add video in user History")
+    if (!addVideo) {
+        throw new ApiError(401, "Unable to add video in user History")
     }
 
     res.status(201)
-    .json(
-        new ApiResponse(200,addVideo,"video add scuuess in user history")
-    )
+        .json(
+            new ApiResponse(200, addVideo, "video add scuuess in user history")
+        )
 
 })
 
