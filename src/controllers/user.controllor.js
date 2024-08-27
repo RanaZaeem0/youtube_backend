@@ -259,59 +259,59 @@ if(!valiedPassworddata.success){
 });
 
 const refreshAccessToken = asyncHandler(async function (req, res) {
+
+
+    const inComingRefreshToken = req.body?.refreshToken;
+
+    if (!inComingRefreshToken) {
+        throw new ApiError(402, "Cannot get token on incmong reqest");
+    }
+    console.log(inComingRefreshToken, "incoing")
+
+    let decodedToken;
+    try {
+        decodedToken = jwt.decode(inComingRefreshToken);
+    } catch (error) {
+        console.error("Token verification error:", error);
+        throw new ApiError(401, "Invalid or expired refresh token.");
+    }
+
+    if (!decodedToken) {
+        throw new ApiError(401, "Unauthorerzie Token");
+    }
+
+    const exictedUser = await User.findById(decodedToken._id);
+
+    if (!exictedUser) {
+        throw new ApiError(401, "The id accend with this token is not exectied");
+    }
     
-    
-        const inComingRefreshToken =
-            req.cookies?.accessToken || req.body?.accessToken;
+    if (inComingRefreshToken !== exictedUser?.refreshToken) {
+        throw new ApiError(401, "Token is valied");
+    }
 
-        if (!inComingRefreshToken) {
-            throw new ApiError(402, "Cannot get token on incmong reqest");
-        }
+    const { refreshToken, accessToken } = await generateAccessAndRefreshToken(
+        exictedUser._id
+    );
 
-        const decodedToken = jwt.verify(
-            inComingRefreshToken,
-            process.env.ACCESS_TOKEN_SECRET
-        );
+    const options = {
+        httpOnly: true,
+        secure: true,
+    };
 
-        if (!decodedToken) {
-            throw new ApiError(401, "Unauthorerzie Token");
-        }
+    return res
+        .status(201)
+        .cookie("refreshToken", refreshToken, options)
+        .cookie("accessToken", accessToken, options)
+    .json(
+        new ApiResponse(
+            200,
+            { refreshToken, accessToken },
+            "token is updated successfully"
+        )
+    );
 
-        const exictedUser = await User.findById(decodedToken._id);
-
-        if (!exictedUser) {
-            throw new ApiError(401, "The id accend with this token is not exectied");
-        }
-        console.log(inComingRefreshToken);
-        console.log(exictedUser.refreshToken);
-        if (inComingRefreshToken !== exictedUser?.refreshToken) {
-            throw new ApiError(401, "Token is valied");
-        }
-
-        const { refreshToken, accessToken } = await generateAccessAndRefreshToken(
-            exictedUser._id
-        );
-
-        const options = {
-            httpOnly: true,
-            secure: true,
-        };
-
-        res
-            .status(201)
-                cookie("refreshToken", refreshToken, options),
-                cookie("accessToken", accessToken, options),
-              
-                json(
-                    new ApiResponse(
-                        200,
-                        { refreshToken, accessToken },
-                        "token is updated successfully"
-                    )
-            );
-   
 });
-
 const getCurrentUser = asyncHandler(async function (req, res) {
     return res
         .status(201)
