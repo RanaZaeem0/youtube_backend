@@ -318,7 +318,6 @@ const refreshAccessToken = asyncHandler(async function (req, res) {
     );
 
 });
-
 const getCurrentUser = asyncHandler(async function (req, res) {
     return res
         .status(201)
