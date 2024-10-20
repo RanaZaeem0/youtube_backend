@@ -43,9 +43,9 @@ app.use('/api/v1/views',views)
 
 
 
-app.get('/', (req, res) => {
+app.get('/api/v1', (req, res) => {
     res.json({
-        msg: "app"
+        msg: "backend is healidy"
     })
 })
 
